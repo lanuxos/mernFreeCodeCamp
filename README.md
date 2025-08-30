@@ -1137,4 +1137,97 @@ const NoteDetailPage = () => {
 export default NoteDetailPage;
 ```
 
-# Deployment
+# [Deployment](https://render.com/)
+- npm init -y # top directory
+- package.json
+```js
+{
+  "name": "mernfreecodecamp",
+  "version": "1.0.0",
+  "description": "# backend ## set-up ```bash mkdir backend cd backend npm init -y npm install express@4.13.2 nodemon touch server.js ``` - server.js ```js import express from \"express\" // type = module // const express = require(\"express\"); // type = commonjs",
+  "main": "index.js",
+  "scripts": {
+    "build": "npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend",
+    "start": "npm run start --prefix backend"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lanuxos/mernFreeCodeCamp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lanuxos/mernFreeCodeCamp/issues"
+  },
+  "homepage": "https://github.com/lanuxos/mernFreeCodeCamp#readme"
+}
+```
+- .env
+```
+MONGO_URI=URI
+PORT=5001
+
+UPSTASH_REDIS_REST_URL="ENDPOINT"
+UPSTASH_REDIS_REST_TOKEN="TOKEN"
+
+NODE_ENV=production
+```
+- server.js
+```js
+// const express = require("express"); // type = commonjs
+import express from "express" // type = module
+import cors from "cors";
+import dotent from "dotenv";
+
+import notesRoutes from "./routes/notesRoutes.js";
+import { connectDB } from "./config/db.js";
+import rateLimiter from "./middleware/rateLimiter.js";
+
+import path from "path";
+
+dotent.config();
+
+const app = express();
+const PORT = process.env.PORT || 5001;
+const __dirname = path.resolve()
+
+// middleware
+if (process.env.NODE_ENV !== "production") {
+    
+    app.use(cors({
+        origin: "http://localhost:5173",
+    }));
+}
+
+app.use(express.json()); // parse json
+app.use(rateLimiter);
+
+app.use("/api/notes", notesRoutes);
+
+app.use(express.static(path.join(__dirname, "../frontend/dist")));
+
+if (process.env.NODE_ENV === "production") {
+    app.get("*", (req, res) => {
+        res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
+    })
+}
+
+connectDB().then(() => {
+    app.listen(PORT, () => {
+        console.log("SERVER STARTED ON PORT", PORT);
+    });
+});
+
+```
+- axios.js
+```js
+import axios from "axios"
+
+const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001/api" : "/api";
+const api = axios.create({
+    baseURL: BASE_URL,
+})
+
+export default api;
+```
